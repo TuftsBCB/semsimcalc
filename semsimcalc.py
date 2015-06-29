@@ -186,12 +186,12 @@ def parse_annotation_corpus(ac_file_name):
 		# If we've just started looking at a new entry, parse as protein name
 		# DON'T do this if we're still on the delimiter line ('-')
 		elif new_entry:
-			curr_prot = line.strip()
+			curr_prot = line.strip().strip(';')
 			new_entry = False
 
 		# Otherwise, parse as GO term
 		else:
-			curr_gos.append(line.strip())
+			curr_gos.append(line.strip().strip(';'))
 
 	ac_file.close()
 
@@ -219,6 +219,8 @@ class SemSimCalculator():
 		self._proteins = [x[0] for x in self._prot_to_gos.items()]
 		self._num_proteins = len(self._proteins)
 		self._ic_vals = {} # For memoizing IC values (they are unchanging given an ontology and annotation corpus)
+		
+		self._go_terms = self._go_graph.nodes()
 
 	def get_go_graph(self):
 		""" Return nx graph for GO """
@@ -314,6 +316,18 @@ class SemSimCalculator():
 
 			(returns a term, common ancestor of left and right)
 		"""
+
+		if not left in self._go_terms:
+			if left in self._alt_list:
+				left = self._alt_list[left]
+			else:
+				return None
+
+		if not right in self._go_terms:
+			if right in self._alt_list:
+				right = self._alt_list[right]
+			else:
+				return None
 
 		# Find common ancestors as intersection of two ancestor sets
 		# NOTE(tfs): Python sets are very slow. List comprehensions are faster
