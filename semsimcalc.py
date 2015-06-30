@@ -142,8 +142,11 @@ def parse_go_file(go_file_name):
 #	GO_term
 # 	-
 #
-def parse_annotation_corpus(ac_file_name):
-	""" Parses annotation corpus. Returns a dictionary of { gene: [terms] } """
+def parse_annotation_corpus(ac_file_name, alt_ids=None):
+	"""
+		Parses annotation corpus. Returns a dictionary of { gene: [terms] }.
+		If a term is a key in alt_ids, saves the associated value instead (if provided).
+	"""
 
 	ac_file = open_or_abort(ac_file_name)
 
@@ -188,10 +191,14 @@ def parse_annotation_corpus(ac_file_name):
 		elif new_entry:
 			curr_prot = line.strip().strip(';')
 			new_entry = False
-
 		# Otherwise, parse as GO term
 		else:
-			curr_gos.append(line.strip().strip(';'))
+			if ("GO:" in line):
+				new_go = line.strip().strip(';')
+				if alt_ids is not None:
+					if new_go in alt_ids:
+						new_go = alt_ids[new_go]
+				curr_gos.append(line.strip().strip(';'))
 
 	ac_file.close()
 
@@ -215,7 +222,7 @@ class SemSimCalculator():
 	def __init__(self, go_file_name, ac_file_name):
 		""" Initialize using GO and annotation corpus files (pass in file name, not file object) """
 		self._go_graph, self._alt_list = parse_go_file(go_file_name)
-		self._prot_to_gos, self._go_to_prots = parse_annotation_corpus(ac_file_name)
+		self._prot_to_gos, self._go_to_prots = parse_annotation_corpus(ac_file_name, self._alt_list)
 		self._proteins = [x[0] for x in self._prot_to_gos.items()]
 		self._num_proteins = len(self._proteins)
 		self._ic_vals = {} # For memoizing IC values (they are unchanging given an ontology and annotation corpus)

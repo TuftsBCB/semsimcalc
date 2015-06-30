@@ -44,7 +44,7 @@ Please see `example_go.obo` for a full example file.
 
 ---
 
-## parse_annotation_corpus(ac_file_name)
+## parse_annotation_corpus(ac_file_name, alt_ids=None)
 
 This function takes in a file name for a pre-processed annotation corpus file of a specific format:
 
@@ -67,6 +67,8 @@ Note: File must both start and end with a `-`line. Please see `example_corpus.st
     This is a python dictionary mapping protein names to GO terms. Keys are protein names, values are python lists of GO terms associated with the key (from the annotation corpus)
   2. `go_to_prots`:
     This is a python dictionary mapping GO terms to protein names. Keys are GO terms, and values are python lists of protein names labeled with the key (from the annotation corpus)
+
+If `alt_ids` is provided, then any keys in `alt_ids` that appear in the annotation corpus will be stored as their associated values in `alt_ids`.
 
 ---
 ---
