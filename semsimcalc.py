@@ -7,6 +7,7 @@ import sys
 import time
 import networkx as nx
 import math
+import pickle
 
 # Helper functions
 def announce(message):
@@ -205,6 +206,15 @@ def parse_annotation_corpus(ac_file_name, alt_ids=None):
 	return (prot_to_gos, go_to_prots)
 
 
+# Load a saved SemSimCalculator
+def load_semsimcalc(saved_path):
+	"""
+		Loads (unpickles) a saved SemSimCalculator
+	"""
+
+	return pickle.load(open(saved_path, 'rb'))
+
+
 
 
 
@@ -228,6 +238,11 @@ class SemSimCalculator():
 		self._ic_vals = {} # For memoizing IC values (they are unchanging given an ontology and annotation corpus)
 		
 		self._go_terms = self._go_graph.nodes()
+
+	def save(self, filepath):
+		""" Saves (pickles) to filepath """
+
+		pickle.dump(self, open(filepath, 'wb'))
 
 	def get_go_graph(self):
 		""" Return nx graph for GO """

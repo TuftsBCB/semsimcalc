@@ -1,6 +1,7 @@
 # semsimcalc.py
 
 Requires module `networkx`. Tested with verion `1.9.1`
+Requires module `pickle`
 Requires modules `sys`, `time`, and `math`, which should be installed with python by default.
 
 See [http://bib.oxfordjournals.org/content/13/5/569.full](http://bib.oxfordjournals.org/content/13/5/569.full) for definitions metric definitions.
@@ -71,6 +72,13 @@ Note: File must both start and end with a `-`line. Please see `example_corpus.st
 If `alt_ids` is provided, then any keys in `alt_ids` that appear in the annotation corpus will be stored as their associated values in `alt_ids`.
 
 ---
+
+# load_semsimcalc(saved_path)
+
+This function takes in a file path to a pickled `SemSimCalculator` object.
+It returns an unpickled `SemSimCalculator` object
+
+---
 ---
 
 # SemSimCalculator class
@@ -113,6 +121,10 @@ Takes in file names for GO ontology file (obo format) and annotation corpus file
 
 Initializes `go_graph`, `alt_list`, `prot_to_gos`, `go_to_prots`, `proteins`, and `num_proteins`.
 Creates `ic_vals` as an empty dictionary.
+
+### `save(self, filepath)`
+
+Pickles and saves `self` to `filepath`
 
 ### `get_go_graph(self)`
 
