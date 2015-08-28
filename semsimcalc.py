@@ -274,11 +274,6 @@ class SemSimCalculator():
 
 		return nx.DiGraph(self._go_graph)
 
-	def get_go_terms(self):
-		""" Return list of GO terms """
-
-		return self._go_terms
-
 	def get_alt_list(self):
 		""" Return alt_list """
 
@@ -311,7 +306,12 @@ class SemSimCalculator():
 			Consider running precompute_ic_vals first.
 		"""
 
-		return self._ic_vals
+		return dict(self._ic_vals)
+
+	def get_go_terms(self):
+		""" Return list of GO terms """
+
+		return list(self._go_terms)
 
 	def get_mica_store(self):
 		""" Returns copy of mica_store """
@@ -559,7 +559,7 @@ class MicaStore():
 
 	def get_micas(self):
 		"""
-			Returns the numpy matrix of MICA values.
+			Returns reference to numpy matrix of MICA values.
 			NOTE: This is a large matrix
 		"""
 
@@ -567,10 +567,11 @@ class MicaStore():
 
 	def get_ordering(self):
 		"""
-			Returns the dictionary mapping GO terms to indices in the _micas matrix
+			Returns copy of the dictionary mapping
+			GO terms to indices in the _micas matrix
 		"""
 
-		return self._go_to_index
+		return dict(self._go_to_index)
 
 	def get_index(self, term):
 		"""

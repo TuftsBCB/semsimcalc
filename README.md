@@ -3,6 +3,7 @@
 Requires module `networkx`. Tested with verion `1.9.1`
 Requires module `pickle`
 Requires modules `sys`, `time`, and `math`, which should be installed with python by default.
+Requires module `numpy`
 
 See [http://bib.oxfordjournals.org/content/13/5/569.full](http://bib.oxfordjournals.org/content/13/5/569.full) for definitions metric definitions.
 
@@ -109,6 +110,12 @@ Class variables:
 * `_ic_vals`
   dictionary mapping GO term to its IC (information content) value. Initialized empty. Used for memoization
 
+* `_go_terms`
+  list of all GO terms in the graph of the ontology
+
+* `_mica_store`
+  reference to a `MicaStore` instance. Initialized as `None`, must be set manually
+
 ---
 
 ## Initialization and variable access
@@ -121,6 +128,14 @@ Takes in file names for GO ontology file (obo format) and annotation corpus file
 
 Initializes `go_graph`, `alt_list`, `prot_to_gos`, `go_to_prots`, `proteins`, and `num_proteins`.
 Creates `ic_vals` as an empty dictionary.
+
+### `link_mica_store(self, mica_store)`
+
+Saves a reference to a `MicaStore` instance
+
+### `unlink_mica_store(self)`
+
+Removes `_mica_store` reference (sets to `None`)
 
 ### `save(self, filepath)`
 
@@ -146,6 +161,14 @@ Return copy of `_go_to_prots`
 
 Return copy of `_ic_vals`
 Note: `get_ic_vals` does not inherently calculate IC values. Use `precompute_ic_vals` first if you need all IC values.
+
+### `get_go_terms(self)`
+
+Return copy of `_go_terms`
+
+### `get_mica_store(self)`
+
+Return *reference* to `_mica_store`
 
 ---
 
@@ -182,6 +205,8 @@ Calculates and returns the Maximum Informative Common Ancestor. (Returns a GO te
 The MICA of two terms is the common ancestor of both terms with the highest information content value.
 
 Note: For this implementation, if left and right are the same, they are included in the list of "common ancestors."
+
+If a `MicaStore` instance is linked (through `link_mica_store`), `MICA` first queries the `MicaStore` instance. Only if the `MicaStore` instance does not return a GO term does `MICA` calculate a result from the GO graph and annotation corpus.
 
 ---
 
@@ -259,6 +284,46 @@ Returns the average of all pairwise term comparisons for the GO terms associated
 
 Takes in two protein names as strings (left_prot, right_prot) and a reference to a comparison metric (ex. any function from the "Comparison Metrics" section). `metric` must take in two ontology terms and return a numeric score.
 Returns the max of all pairwise term comparisons for the GO terms associated with the proteins `left_prot` and `right_prot` using `metric`.
+
+---
+---
+
+# MicaStore class
+
+Wrapper class for a numpy matrix of MICA values.
+
+Takes a numpy matrix of MICA values and an ordering of GO terms (indices in the matrix).
+
+Class variables:
+
+* `_micas`
+  `numpy` matrix of mica values
+
+* `_go_to_index`
+  dictionary mapping GO terms to indices in the matrix (matrix must be symmetrical)
+
+### Class initialization - `__ini__(self, matrix_filename, ordering_filename)`
+
+Loads `numpy` matrix from `matrix_filename` into `_micas`.
+Parses ordered list of GO terms from `ordering_filename` (one term per line).
+
+### `get_micas(self)`
+
+Returns reference to `numpy` array `_micas`
+
+### `get_ordering(self)`
+
+Returns copy of `_go_to_index` dictionary 
+
+### `get_index(self, term)`
+
+If `term` is in `_go_to_index`, return `_go_to_index[term]`, which corresponds to `term`'s index in `_micas`
+If `term` is not in `_go_to_index`, return `None`
+
+### `mica_lookup(self, left, right)`
+
+Attempts to look up a MICA value from `_micas`.
+If MICA value cannot be found (or `left` or `right` are not in `_go_to_index`), returns `None`
 
 ---
 ---
