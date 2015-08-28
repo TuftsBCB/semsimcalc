@@ -8,6 +8,7 @@ import time
 import networkx as nx
 import math
 import pickle
+import numpy
 
 # Helper functions
 def announce(message):
@@ -21,7 +22,7 @@ def open_or_abort(filename, option='r'):
 		newfile = open(filename, option)
 	except IOError:
 		sys.stderr.write("Could not open {} -- Aborting\n".format(filename))
-		exit()
+		raise IOError
 	return newfile
 
 
@@ -231,6 +232,7 @@ class SemSimCalculator():
 
 	def __init__(self, go_file_name, ac_file_name):
 		""" Initialize using GO and annotation corpus files (pass in file name, not file object) """
+
 		self._go_graph, self._alt_list = parse_go_file(go_file_name)
 		self._prot_to_gos, self._go_to_prots = parse_annotation_corpus(ac_file_name, self._alt_list)
 		self._proteins = [x[0] for x in self._prot_to_gos.items()]
@@ -239,15 +241,43 @@ class SemSimCalculator():
 		
 		self._go_terms = self._go_graph.nodes()
 
+		self._mica_store = None
+
+	def link_mica_store(self, mica_store):
+		""" Stores a reference to a MicaStore instance """
+
+		self._mica_store = mica_store
+
+	def unlink_mica_store(self):
+		""" Removes link to a MicaStore instance (sets to None) """
+
+		self._mica_store = None
+
 	def save(self, filepath):
-		""" Saves (pickles) to filepath """
+		"""
+			Saves (pickles) to filepath
+
+			NOTE: Does not save reference to MicaStore instance (as this will likely be broken on load)
+		"""
+
+		# Do not store reference to MicaStore instance
+		temp = self._mica_store
+		self._mica_store = None 
 
 		pickle.dump(self, open(filepath, 'wb'))
+
+		# Restore _mica_store reference
+		self._mica_store = temp
 
 	def get_go_graph(self):
 		""" Return nx graph for GO """
 
 		return nx.DiGraph(self._go_graph)
+
+	def get_go_terms(self):
+		""" Return list of GO terms """
+
+		return self._go_terms
 
 	def get_alt_list(self):
 		""" Return alt_list """
@@ -282,6 +312,11 @@ class SemSimCalculator():
 		"""
 
 		return self._ic_vals
+
+	def get_mica_store(self):
+		""" Returns copy of mica_store """
+
+		return self._mica_store
 
 	def calc_term_prob(self, term):
 		""" Probability of term or desc(term) to occur as a label within the annotation corpus """
@@ -337,6 +372,8 @@ class SemSimCalculator():
 							tj in ancestors(t1, t2)
 
 			(returns a term, common ancestor of left and right)
+
+			NOTE: If a MicaStore instance is linked, first try querying the stored instance
 		"""
 
 		if not left in self._go_terms:
@@ -350,6 +387,20 @@ class SemSimCalculator():
 				right = self._alt_list[right]
 			else:
 				return None
+
+		# Attempt lookup in linked MicaStore instance
+		if (self._mica_store != None):
+			mica = self._mica_store.mica_lookup(left, right)
+
+			if (mica != None) and (mica != '') and (mica != 'None'):
+				return mica
+				#if (mica == ''):
+					# MICA is stored, but does not exist (None is a possible MICA value)
+				#	return None
+				#else:
+				#	return mica
+
+		# Fall through and calculate MICA
 
 		# Find common ancestors as intersection of two ancestor sets
 		# NOTE(tfs): Python sets are very slow. List comprehensions are faster
@@ -472,3 +523,88 @@ class SemSimCalculator():
 ####################################
 ###  End SemSim_Calculator class ###
 ####################################
+
+
+
+
+
+
+#######################
+### MicaStore class ###
+#######################
+
+
+class MicaStore():
+	"""
+		Loads a matrix of MICA scores (and a list of GO term indices),
+		Provides accessors for MICA score lookup
+	"""
+
+	def __init__(self, matrix_filename, ordering_filename):
+		"""
+			Loads the .npy numpy array,  matrix_filename,
+			Stores the indices for each GO term in ordering_filename
+		"""
+		orderfile = open_or_abort(ordering_filename)
+
+		self._micas = numpy.load(matrix_filename)
+		self._go_to_index = {}
+
+		index = 0
+		for line in orderfile:
+			self._go_to_index[line.strip()] = index
+			index += 1
+
+		orderfile.close()
+
+	def get_micas(self):
+		"""
+			Returns the numpy matrix of MICA values.
+			NOTE: This is a large matrix
+		"""
+
+		return self._micas
+
+	def get_ordering(self):
+		"""
+			Returns the dictionary mapping GO terms to indices in the _micas matrix
+		"""
+
+		return self._go_to_index
+
+	def get_index(self, term):
+		"""
+			Returns the index of a GO term in the ordering of _micas (using _go_to_index)
+			Returns None if term is not in _go_to_index
+		"""
+
+		if (term in self._go_to_index):
+			return self._go_to_index[term]
+		else:
+			return None
+
+	def mica_lookup(self, left, right):
+		"""
+			If a MICA value can be found in _micas, return that MICA
+			Else, return None
+		"""
+
+		left_index = self.get_index(left)
+		right_index = self.get_index(right)
+
+		if (left_index != None) and (right_index != None):
+			mica = self._micas[left_index, right_index]
+		else:
+			mica = None
+
+		if (mica == ''):
+			# Indicates that the mica was found, but does not exist (None is a valid MICA value)
+			mica = ''
+
+		return mica
+
+
+###########################
+### End MicaStore class ###
+###########################
+
