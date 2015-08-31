@@ -439,7 +439,13 @@ class SemSimCalculator():
 			Currently untested
 		"""
 
-		return self.IC(self.MICA(left, right)) / (IC(go_graph, go_to_prots, left) + IC(go_graph, go_to_prots, right))
+		leftIC = self.IC(left)
+		rightIC = self.IC(right)
+
+		if leftIC == None or rightIC == None:
+			return None
+		else:
+			return self.IC(self.MICA(left, right)) / (leftIC + rightIC)
 
 
 	def simJC(self, left, right):
@@ -449,7 +455,13 @@ class SemSimCalculator():
 			Currently untested
 		"""
 
-		return 1 - self.IC(left) + self.IC(right) - (2*self.IC(self.MICA(left, right)))
+		leftIC = self.IC(left)
+		rightIC = self.IC(right)
+
+		if leftIC == None or rightIC == None:
+			return None
+		else:
+			return 1 - self.IC(left) + self.IC(right) - (2*self.IC(self.MICA(left, right)))
 
 	def pairwise_average_term_comp(self, lefts, rights, metric):
 		"""
