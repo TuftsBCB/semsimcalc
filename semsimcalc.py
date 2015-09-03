@@ -405,12 +405,14 @@ class SemSimCalculator():
 		# Find common ancestors as intersection of two ancestor sets
 		# NOTE(tfs): Python sets are very slow. List comprehensions are faster
 		left_ancs = nx.algorithms.dag.ancestors(self._go_graph, left)
+		left_ancs.add(left)
 		right_ancs = nx.algorithms.dag.ancestors(self._go_graph, right)
+		right_ancs.add(right)
 		ancestors = [a for a in left_ancs if a in right_ancs]
 
 		# Edge case where left and right are the same. Treat left and right as a common ancestor
-		if left == right:
-			ancestors.append(left)
+		#if left == right:
+		#	ancestors.append(left)
 
 		max_term = None
 		max_IC = 0
