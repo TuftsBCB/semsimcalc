@@ -228,8 +228,6 @@ Calculates and returns the Lin score for the two terms. (Returns a flot)
 simLin is defined as the simRes of two terms divided by the sum of the information contents for each term (left and right).
 See [here](http://bib.oxfordjournals.org/content/13/5/569.full) for more details.
 
-**Note: Currently untested**
-
 ### `simJC(self, left, right)`
 
 Takes in two GO terms as strings. Order doesn't matter.
