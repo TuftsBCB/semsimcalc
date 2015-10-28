@@ -498,6 +498,9 @@ class SemSimCalculator():
 			metric must take in two ontology terms (left and right) and return a numeric score.
 		"""
 
+		if (len(lefts) == 0) or (len(rights) == 0):
+			return None
+
 		max_score = 0
 
 		for left in lefts:
@@ -527,8 +530,14 @@ class SemSimCalculator():
 			metric must take in two ontology terms (left and right) and return a numeric score.
 		""" 
 
-		left_terms = self._prot_to_gos[left_prot]
-		right_terms = self._prot_to_gos[right_prot]
+		left_terms = []
+		right_terms = []
+
+		if (left_prot in self._prot_to_gos):
+			left_terms = self._prot_to_gos[left_prot]
+
+		if (right_prot in self._prot_to_gos):
+			right_terms = self._prot_to_gos[right_prot]
 
 		return self.pairwise_max_term_comp(left_terms, right_terms, metric)
 
