@@ -340,6 +340,44 @@ class SemSimCalculator():
 
 		return prob
 
+	def calc_conditional_prob(self, term, condition):
+		"""
+			Probability that term or desc(term) appears
+			as label in annotaiton corpus,
+			given that condition appears as a term.
+		"""
+
+		if term == None or (not term in self._go_graph):
+			return None
+
+		# Find all descendants of condition, including condition
+		cond_terms = nx.algorithms.dag.descendants(self._go_graph, condition)
+		cond_terms.add(condition)
+
+		# Find all descendants of term, including term
+		terms = nx.algorithms.dag.descendants(self._go_graph, term)
+		terms.add(term)
+
+		conditional_proteins = {}
+		for cond_term in cond_terms:
+			if cond_term in self._go_to_prots:
+				for prot in self._go_to_prots[cond_term]:
+					conditional_proteins[prot] = True
+
+		restricted_term_proteins = {}
+		for r_term in terms:
+			if r_term in self._go_to_prots:
+				for prot in self._go_to_prots[r_term]:
+					if prot in conditional_proteins.keys():
+						restricted_term_proteins[prot] = True
+
+		if len(conditional_proteins.items()) == 0:
+			return None
+		else:
+			prob = float(len(restricted_term_proteins.items()))
+			prob = prob / float(len(conditional_proteins.items()))
+			return prob
+
 	def IC(self, term):
 		""" Information content: IC(c) = -log(p(c)) """
 
@@ -358,6 +396,18 @@ class SemSimCalculator():
 		else:
 			# If seen before, return memoized value
 			return self._ic_vals[term]
+
+	def conditional_IC(self, term, condition):
+		""" Conditional Information Content: cIC(t | c) = -log(p(t | c)) """
+
+		# Too many values to memoize
+		cond_prob = self.calc_conditional_prob(term, condition)
+
+		if cond_prob == 0 or cond_prob == None:
+			return None
+		else:
+			cic = (-1) * math.log(cond_prob)
+			return cic
 
 	def precompute_ic_vals(self):
 		""" Compute and store IC values for all ontology terms """
